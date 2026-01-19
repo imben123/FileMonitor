@@ -48,6 +48,12 @@ public final class MacosWatcher: WatcherProtocol {
           pendingRenameOtherFile = false
         } else {
           pendingRenameOtherFile = true
+          DispatchQueue.main.async {
+            if self.pendingRenameOtherFile {
+              self.lastFiles = currentFiles
+              self.pendingRenameOtherFile = false
+            }
+          }
           return
         }
       }

@@ -28,6 +28,14 @@ public final class MacosWatcher: WatcherProtocol {
 
       let currentFiles = try getCurrentFiles(in: directory)
 
+      // The source of a clone is reported too, with nothing but the clone flag, and nothing has
+      // happened to it. It must not update `lastFiles` either: the clone already exists on disk,
+      // and the clone's own event, which may come after this one, has to still see it as new.
+      if event.cloned && !event.created && !event.removed && !event.renamed && !event.modified
+          && lastFiles.contains(event.path) {
+        return
+      }
+
       let removedFiles = getDifferencesInFiles(lhs: lastFiles, rhs: currentFiles)
       let addedFiles = getDifferencesInFiles(lhs: currentFiles, rhs: lastFiles)
       let changeSetCount = addedFiles.count - removedFiles.count
@@ -57,7 +65,7 @@ public final class MacosWatcher: WatcherProtocol {
           return
         }
       }
-      else if (event.fileCreated || event.dirCreated) {
+      else if (event.fileCreated || event.dirCreated || event.fileCloned || event.dirCloned) {
         guard addedFiles.contains(event.path) else { return }
         self.delegate?.fileDidChanged(event: FileChangeEvent.added(file: url))
         pendingRenameOtherFile = false

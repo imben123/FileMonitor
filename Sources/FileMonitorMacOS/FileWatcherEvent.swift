@@ -44,6 +44,9 @@ extension FileWatcherEvent {
     var removed: Bool { (flags & FSEventStreamEventFlags(kFSEventStreamEventFlagItemRemoved)) != 0 }
     var renamed: Bool { (flags & FSEventStreamEventFlags(kFSEventStreamEventFlagItemRenamed)) != 0 }
     var modified: Bool { (flags & FSEventStreamEventFlags(kFSEventStreamEventFlagItemModified)) != 0 }
+    /// An APFS clone (Finder's Duplicate and copy/paste). Both the source and the new file get
+    /// this flag, and the new file gets it *before* it gets `created`.
+    var cloned: Bool { (flags & FSEventStreamEventFlags(kFSEventStreamEventFlagItemCloned)) != 0 }
 }
 
 /**
@@ -55,11 +58,13 @@ extension FileWatcherEvent {
     public var fileRemoved: Bool { fileChange && removed }
     public var fileRenamed: Bool { fileChange && renamed }
     public var fileModified: Bool { fileChange && modified }
+    public var fileCloned: Bool { fileChange && cloned }
     // Directory
     public var dirCreated: Bool { dirChange && created }
     public var dirRemoved: Bool { dirChange && removed }
     public var dirRenamed: Bool { dirChange && renamed }
     public var dirModified: Bool { dirChange && modified }
+    public var dirCloned: Bool { dirChange && cloned }
 }
 
 /**
@@ -71,7 +76,7 @@ extension FileWatcherEvent {
     public var description: String {
         var result = "The \(fileChange ? "file":"directory") \(path) was"
         if removed { result += " removed" }
-        else if created { result += " created" }
+        else if created || cloned { result += " created" }
         else if renamed { result += " renamed" }
         else if modified { result += " modified" }
         return result
